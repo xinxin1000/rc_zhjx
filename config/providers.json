@@ -1,0 +1,67 @@
+[
+  {
+    "event_key": "user_registered",
+    "name": "ad-platform-register-callback",
+    "method": "POST",
+    "url": "http://localhost:9090/mock/ad/register",
+    "headers": {
+      "Content-Type": "application/json",
+      "X-Provider": "ad-platform"
+    },
+    "body_template": {
+      "event": "register",
+      "user_id": "{{user.id}}",
+      "campaign": "{{campaign}}",
+      "occurred_at": "{{occurred_at}}"
+    },
+    "extract_fields": {
+      "user_id": "user.id",
+      "campaign": "campaign"
+    },
+    "dispatch_mode": "queue",
+    "timeout_ms": 3000
+  },
+  {
+    "event_key": "payment_succeeded",
+    "name": "crm-contact-paid-callback",
+    "method": "POST",
+    "url": "http://localhost:9090/mock/crm/contact",
+    "headers": {
+      "Content-Type": "application/json",
+      "X-Provider": "crm"
+    },
+    "body_template": {
+      "contact_id": "{{contact_id}}",
+      "status": "paid",
+      "amount": "{{amount}}"
+    },
+    "extract_fields": {
+      "contact_id": "contact_id",
+      "amount": "amount"
+    },
+    "dispatch_mode": "queue",
+    "timeout_ms": 3000
+  },
+  {
+    "event_key": "inventory_changed",
+    "name": "inventory-stock-callback",
+    "method": "POST",
+    "url": "http://localhost:9090/mock/inventory/change",
+    "headers": {
+      "Content-Type": "application/json",
+      "X-Provider": "inventory"
+    },
+    "body_template": {
+      "event": "inventory_changed",
+      "sku": "{{sku}}",
+      "delta": "{{delta}}",
+      "occurred_at": "{{occurred_at}}"
+    },
+    "extract_fields": {
+      "sku": "sku",
+      "delta": "delta"
+    },
+    "dispatch_mode": "direct",
+    "timeout_ms": 3000
+  }
+]

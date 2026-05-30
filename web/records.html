@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>投递记录</title>
+  <style>
+    :root {
+      --bg: #f7f8fa;
+      --text: #1f2328;
+      --muted: #667085;
+      --line: #e5e7eb;
+      --panel: #ffffff;
+      --accent: #2563eb;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 14px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    header {
+      border-bottom: 1px solid var(--line);
+      background: var(--panel);
+    }
+    .wrap {
+      width: min(1200px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      min-height: 64px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 650;
+    }
+    nav, .filters {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    a, button, input {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--panel);
+      color: var(--text);
+      padding: 8px 12px;
+      text-decoration: none;
+    }
+    button {
+      cursor: pointer;
+    }
+    button.primary {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: white;
+    }
+    main {
+      padding: 24px 0;
+    }
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .summary {
+      color: var(--muted);
+    }
+    .table-wrap {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      overflow: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 980px;
+    }
+    th, td {
+      border-bottom: 1px solid var(--line);
+      padding: 10px 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: #f9fafb;
+      color: var(--muted);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    tr:last-child td {
+      border-bottom: 0;
+    }
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+      font-size: 12px;
+      overflow-wrap: anywhere;
+    }
+    .status {
+      display: inline-flex;
+      border-radius: 999px;
+      padding: 3px 8px;
+      font-size: 12px;
+      font-weight: 650;
+      white-space: nowrap;
+    }
+    .succeeded { background: #ecfdf3; color: #047857; }
+    .retrying, .pending { background: #fffaeb; color: #b54708; }
+    .dead { background: #fef3f2; color: #b42318; }
+    .failure {
+      display: inline-flex;
+      border-radius: 999px;
+      padding: 3px 8px;
+      font-size: 12px;
+      font-weight: 650;
+      white-space: nowrap;
+      background: #f2f4f7;
+      color: #344054;
+    }
+    .failure.network { background: #fef3f2; color: #b42318; }
+    .failure.timeout { background: #fff6ed; color: #b93815; }
+    .failure.http { background: #fefbe8; color: #a15c07; }
+    .failure.biz { background: #eef4ff; color: #3538cd; }
+    .muted {
+      color: var(--muted);
+    }
+    details {
+      max-width: 260px;
+    }
+    pre {
+      margin: 8px 0 0;
+      padding: 10px;
+      border-radius: 6px;
+      background: #f3f4f6;
+      overflow: auto;
+      max-height: 240px;
+      font-size: 12px;
+    }
+    .empty, .error {
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      padding: 28px;
+      text-align: center;
+      color: var(--muted);
+    }
+    .error { color: #b42318; }
+    @media (max-width: 780px) {
+      .topbar, .toolbar { align-items: stretch; flex-direction: column; }
+      input { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap topbar">
+      <h1>投递记录</h1>
+      <nav>
+        <a href="/admin/configs-page">通知配置</a>
+        <button class="primary" id="refresh">刷新</button>
+      </nav>
+    </div>
+  </header>
+  <main class="wrap">
+    <section class="toolbar">
+      <div class="filters">
+        <input id="eventKey" placeholder="按 event_key 过滤">
+        <input id="limit" type="number" min="1" max="500" value="50" aria-label="记录数量">
+        <button id="search">查询</button>
+      </div>
+      <div class="summary" id="count">加载中</div>
+    </section>
+    <section id="content"></section>
+  </main>
+  <script>
+    const content = document.querySelector('#content');
+    const count = document.querySelector('#count');
+    const eventKey = document.querySelector('#eventKey');
+    const limit = document.querySelector('#limit');
+    document.querySelector('#refresh').addEventListener('click', loadRecords);
+    document.querySelector('#search').addEventListener('click', loadRecords);
+    eventKey.addEventListener('keydown', event => {
+      if (event.key === 'Enter') loadRecords();
+    });
+
+    function escapeHTML(value) {
+      return String(value ?? '').replace(/[&<>"']/g, char => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[char]));
+    }
+
+    function formatTime(value) {
+      if (!value) return '-';
+      return new Date(value).toLocaleString();
+    }
+
+    function formatJSON(value) {
+      if (value == null || value === '') return '-';
+      if (typeof value === 'string') {
+        try {
+          return JSON.stringify(JSON.parse(value), null, 2);
+        } catch {
+          return value;
+        }
+      }
+      return JSON.stringify(value, null, 2);
+    }
+
+    function details(title, value) {
+      const text = formatJSON(value);
+      if (text === '-') return '<span class="muted">-</span>';
+      return `<details><summary>${escapeHTML(title)}</summary><pre>${escapeHTML(text)}</pre></details>`;
+    }
+
+    function failureType(item) {
+      if (item.status === 'succeeded') {
+        return { label: '-', cls: '' };
+      }
+      const error = String(item.error || '').toLowerCase();
+      const httpStatus = Number(item.http_status || 0);
+      const responseCode = Number(item.response_code);
+
+      if (error.includes('connection refused') || error.includes('actively refused') || error.includes('no such host')) {
+        return { label: '连接失败', cls: 'network' };
+      }
+      if (error.includes('timeout') || error.includes('deadline exceeded')) {
+        return { label: '超时', cls: 'timeout' };
+      }
+      if (httpStatus >= 400) {
+        return { label: `HTTP ${httpStatus}`, cls: 'http' };
+      }
+      if (!Number.isNaN(responseCode) && responseCode !== 0) {
+        return { label: `业务 Code ${responseCode}`, cls: 'biz' };
+      }
+      return { label: item.error ? '投递失败' : '-', cls: '' };
+    }
+
+    function renderRows(items) {
+      return items.map(item => {
+        const type = failureType(item);
+        return `
+          <tr>
+            <td class="mono">${escapeHTML(item.id)}</td>
+            <td>
+              <div>${escapeHTML(item.event_key)}</div>
+              <div class="muted mono">${escapeHTML(item.target_url)}</div>
+            </td>
+            <td><span class="status ${escapeHTML(item.status)}">${escapeHTML(item.status)}</span></td>
+            <td><span class="failure ${escapeHTML(type.cls)}">${escapeHTML(type.label)}</span></td>
+            <td>${escapeHTML(item.attempt)}</td>
+            <td>${escapeHTML(item.http_status || '-')}</td>
+            <td class="mono">${escapeHTML(item.response_code ?? '-')}</td>
+            <td>${details('关键字段', item.extracted)}</td>
+            <td>${details('响应', item.response_body)}</td>
+            <td>${escapeHTML(item.error || '-')}</td>
+            <td>${escapeHTML(formatTime(item.updated_at))}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderTable(items) {
+      return `
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>事件 / 目标</th>
+                <th>状态</th>
+                <th>失败类型</th>
+                <th>次数</th>
+                <th>HTTP</th>
+                <th>Code</th>
+                <th>关键字段</th>
+                <th>响应</th>
+                <th>错误</th>
+                <th>更新时间</th>
+              </tr>
+            </thead>
+            <tbody>${renderRows(items)}</tbody>
+          </table>
+        </div>`;
+    }
+
+    async function loadRecords() {
+      count.textContent = '加载中';
+      content.innerHTML = '';
+      const params = new URLSearchParams();
+      if (eventKey.value.trim()) params.set('event_key', eventKey.value.trim());
+      if (limit.value) params.set('limit', limit.value);
+      try {
+        const res = await fetch(`/admin/records?${params.toString()}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const items = data.items || [];
+        count.textContent = `共 ${items.length} 条记录`;
+        content.innerHTML = items.length ? renderTable(items) : '<div class="empty">暂无投递记录</div>';
+      } catch (err) {
+        count.textContent = '加载失败';
+        content.innerHTML = `<div class="error">读取记录失败：${escapeHTML(err.message)}</div>`;
+      }
+    }
+
+    loadRecords();
+  </script>
+</body>
+</html>

@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>通知配置</title>
+  <style>
+    :root {
+      --bg: #f7f8fa;
+      --text: #1f2328;
+      --muted: #667085;
+      --line: #e5e7eb;
+      --panel: #ffffff;
+      --accent: #2563eb;
+      --ok: #047857;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 14px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    header {
+      border-bottom: 1px solid var(--line);
+      background: var(--panel);
+    }
+    .wrap {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      min-height: 64px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 650;
+    }
+    nav {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    a, button {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--panel);
+      color: var(--text);
+      padding: 8px 12px;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    button.primary {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: white;
+    }
+    main {
+      padding: 24px 0;
+    }
+    .summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+      color: var(--muted);
+    }
+    .grid {
+      display: grid;
+      gap: 12px;
+    }
+    .item {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      padding: 16px;
+    }
+    .item-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .name {
+      font-size: 16px;
+      font-weight: 650;
+    }
+    .key {
+      color: var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+      overflow-wrap: anywhere;
+    }
+    .badge {
+      border-radius: 999px;
+      background: #ecfdf3;
+      color: var(--ok);
+      padding: 3px 8px;
+      font-size: 12px;
+      font-weight: 650;
+      white-space: nowrap;
+    }
+    dl {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 8px 16px;
+      margin: 0;
+    }
+    dt {
+      color: var(--muted);
+    }
+    dd {
+      margin: 0;
+      overflow-wrap: anywhere;
+    }
+    pre {
+      margin: 0;
+      padding: 10px;
+      border-radius: 6px;
+      background: #f3f4f6;
+      overflow: auto;
+      font-size: 12px;
+    }
+    .empty, .error {
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      padding: 28px;
+      text-align: center;
+      color: var(--muted);
+    }
+    .error { color: #b42318; }
+    @media (max-width: 720px) {
+      .topbar, .summary, .item-head { align-items: stretch; flex-direction: column; }
+      dl { grid-template-columns: 1fr; }
+      dt { margin-top: 8px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap topbar">
+      <h1>通知配置</h1>
+      <nav>
+        <a href="/admin/records-page">投递记录</a>
+        <button class="primary" id="refresh">刷新</button>
+      </nav>
+    </div>
+  </header>
+  <main class="wrap">
+    <section class="summary">
+      <span id="count">加载中</span>
+      <span>来源：/admin/configs</span>
+    </section>
+    <section class="grid" id="list"></section>
+  </main>
+  <script>
+    const list = document.querySelector('#list');
+    const count = document.querySelector('#count');
+    document.querySelector('#refresh').addEventListener('click', loadConfigs);
+
+    function asJSON(value) {
+      return JSON.stringify(value ?? {}, null, 2);
+    }
+
+    function escapeHTML(value) {
+      return String(value ?? '').replace(/[&<>"']/g, char => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[char]));
+    }
+
+    function renderItem(item) {
+      return `
+        <article class="item">
+          <div class="item-head">
+            <div>
+              <div class="name">${escapeHTML(item.name || item.event_key)}</div>
+              <div class="key">${escapeHTML(item.event_key)}</div>
+            </div>
+            <span class="badge">${escapeHTML(item.method || 'POST')}</span>
+          </div>
+          <dl>
+            <dt>目标地址</dt><dd>${escapeHTML(item.url)}</dd>
+            <dt>投递模式</dt><dd>${escapeHTML(item.dispatch_mode || 'queue')}</dd>
+            <dt>超时</dt><dd>${escapeHTML(item.timeout_ms)} ms</dd>
+            <dt>Headers</dt><dd><pre>${escapeHTML(asJSON(item.headers))}</pre></dd>
+            <dt>Body 模板</dt><dd><pre>${escapeHTML(asJSON(item.body_template))}</pre></dd>
+          </dl>
+        </article>`;
+    }
+
+    async function loadConfigs() {
+      count.textContent = '加载中';
+      list.innerHTML = '';
+      try {
+        const res = await fetch('/admin/configs');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const items = data.items || [];
+        count.textContent = `共 ${items.length} 条配置`;
+        list.innerHTML = items.length ? items.map(renderItem).join('') : '<div class="empty">暂无配置</div>';
+      } catch (err) {
+        count.textContent = '加载失败';
+        list.innerHTML = `<div class="error">读取配置失败：${escapeHTML(err.message)}</div>`;
+      }
+    }
+
+    loadConfigs();
+  </script>
+</body>
+</html>

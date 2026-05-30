@@ -1,0 +1,12 @@
+2026/05/28 22:25:39.174180 engine.go:702: [Debug] HERTZ: Method=GET    absolutePath=/admin/configs-page       --> handlerName=github.com/cloudwego/hertz/pkg/route.(*RouterGroup).StaticFile.func1 (num=2 handlers)
+2026/05/28 22:25:39.180397 engine.go:702: [Debug] HERTZ: Method=HEAD   absolutePath=/admin/configs-page       --> handlerName=github.com/cloudwego/hertz/pkg/route.(*RouterGroup).StaticFile.func1 (num=2 handlers)
+2026/05/28 22:25:39.181421 engine.go:702: [Debug] HERTZ: Method=GET    absolutePath=/admin/records-page       --> handlerName=github.com/cloudwego/hertz/pkg/route.(*RouterGroup).StaticFile.func1 (num=2 handlers)
+2026/05/28 22:25:39.182443 engine.go:702: [Debug] HERTZ: Method=HEAD   absolutePath=/admin/records-page       --> handlerName=github.com/cloudwego/hertz/pkg/route.(*RouterGroup).StaticFile.func1 (num=2 handlers)
+2026/05/28 22:25:39.183467 engine.go:702: [Debug] HERTZ: Method=GET    absolutePath=/health                   --> handlerName=rc_notify_hertz/internal/httpapi.NewRouter.func1 (num=2 handlers)
+2026/05/28 22:25:39.183467 engine.go:702: [Debug] HERTZ: Method=GET    absolutePath=/admin/configs            --> handlerName=rc_notify_hertz/internal/httpapi.NewRouter.func2 (num=2 handlers)
+2026/05/28 22:25:39.183978 engine.go:702: [Debug] HERTZ: Method=GET    absolutePath=/admin/records            --> handlerName=rc_notify_hertz/internal/httpapi.NewRouter.func3 (num=2 handlers)
+2026/05/28 22:25:39.184492 engine.go:702: [Debug] HERTZ: Method=GET    absolutePath=/admin/dlq                --> handlerName=rc_notify_hertz/internal/httpapi.NewRouter.func4 (num=2 handlers)
+2026/05/28 22:25:39.184492 engine.go:702: [Debug] HERTZ: Method=POST   absolutePath=/api/events/:event_key/notify --> handlerName=rc_notify_hertz/internal/httpapi.NewRouter.func5 (num=2 handlers)
+2026/05/28 22:25:39.185242 engine.go:416: [Info] HERTZ: Using network library=standard
+2026/05/28 22:25:39.186779 transport.go:81: [Info] HERTZ: HTTP server listening on address=[::]:8080
+2026/05/28 22:30:00 [wechat-alert] delivery dead letter id=diudqcosddg4 event=user_registered target=http://localhost:9090/mock/ad/register error=Post "http://localhost:9090/mock/ad/register": dial tcp [::1]:9090: connectex: No connection could be made because the target machine actively refused it.
