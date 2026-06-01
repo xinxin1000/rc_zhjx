@@ -268,13 +268,11 @@ powershell -ExecutionPolicy Bypass -File .\scripts\seed-demo-records.ps1
 powershell -ExecutionPolicy Bypass -File .\scripts\seed-demo-records.ps1 -ReplayDryRun
 powershell -ExecutionPolicy Bypass -File .\scripts\seed-demo-records.ps1 -Replay
 ```
-
 ## 演示图片
 
-```md
-![配置展示页](images/configs-page.png)
-![投递记录页](images/records-page.png)
-```
+![配置展示页](images/config.png)
+
+![投递记录页](images/records.png)
 
 ## 未来演进
 
